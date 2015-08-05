@@ -31,7 +31,11 @@
 #	Questo script agisce su indicazioni e conferma dell'utente, pertanto 
 #	l'autore non si ritiene responsabile di qualsiasi danno o perdita di dati 
 #	derivata dall'uso improprio o inconsapevole di questo script!
-
+####################################################################################################
+# GIAMAT 05/08/15: Rimossa visualizzazione dell'output del wget per pulizia e modificato il controllo
+#		   della corretta installazione in quanto dava sempre errore anche quando riusciva ad
+#		   installare correttamente il kernel (cambiato comando dpkg da allora?) spec I002
+#################################################################################################à##
 DIPENDENZE="dialog curl wget"
 
 VERSION=0.61
@@ -133,15 +137,22 @@ yo_takeit(){
 	mkdir -p $DownloadFolder; cd $DownloadFolder
 	listcontent=$(curl -s $AddressVersion | awk -F\" '{if (NF > 7) print "'$AddressVersion'"$8}')
 	###download header-all
-	wget $(echo $listcontent |tr " " "\n" | grep "all.deb")
+	# I002 wget $(echo $listcontent |tr " " "\n" | grep "all.deb")
+	wget $(echo $listcontent |tr " " "\n" | grep "all.deb") >> /dev/null #I002
 	###download header specifico
-	wget $(echo $listcontent |tr " " "\n" | grep "headers.\{1,\}$Choose.\{1,\}$myarch.deb")
+	# I002 wget $(echo $listcontent |tr " " "\n" | grep "headers.\{1,\}$Choose.\{1,\}$myarch.deb")
+	wget $(echo $listcontent |tr " " "\n" | grep "headers.\{1,\}$Choose.\{1,\}$myarch.deb") >> dev/null # I002
 	###download image specifica
-	wget $(echo $listcontent |tr " " "\n" | grep "image.\{1,\}$Choose.\{1,\}$myarch.deb")
-	echo
-	echo "Download finito. Installiamo"
-	echo
-	if $(dpkg -i *.deb);then
+	# I002 wget $(echo $listcontent |tr " " "\n" | grep "image.\{1,\}$Choose.\{1,\}$myarch.deb")
+	wget $(echo $listcontent |tr " " "\n" | grep "image.\{1,\}$Choose.\{1,\}$myarch.deb") >> dev/null # I002
+	# I002 echo
+	# I002 echo "Download finito. Installiamo"
+	# I002 echo
+	dpkg -i *.deb >> /dev/null # I002
+	# I002 if $(dpkg -i *.deb);then
+	# Ricalcolo l'ultimo kernel installato e lo confronto con l'ultimo kernel disponibile.. Se sono uguali, l'installazione è andata a buon fine #I002
+	LastKernelInstalled=$(ls /boot/ | grep img | cut -d "-" -f2 | sort -V | cut -d "." -f1,2,3 | tail -n 1) # I002
+        if [ $LastKernelInstalled = $LastKernelAvailable ];then # I002
 		dialog --title "Sei aggiornato" --msgbox "Ho installato correttamente il kernel $LastKernelAvailable $Choose, leggi l'output in cerca di errori, in particolare se hai moduli proprietari come i driver per le schede video e riavvia per attivare il tuo nuovo kernel" 10 60
 	else
 		dialog --title "Attenzione" --msgbox "Qualcosa è andato storto durante l'installazione, leggi bene l'output sopra in cerca dell'errore e riparalo!
